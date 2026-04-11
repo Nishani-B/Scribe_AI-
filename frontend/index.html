@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scribe AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--sky:#0ea5e9;--sky-dark:#0284c7;--sky-light:#e0f2fe;--ink:#0f172a;--ink-2:#334155;--ink-3:#64748b;--ink-4:#94a3b8;--bg:#f8fafc;--surface:#ffffff;--border:#e2e8f0;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--radius:12px;--radius-sm:8px;--shadow:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.04);--shadow-md:0 4px 16px rgba(0,0,0,.08);--shadow-lg:0 12px 40px rgba(0,0,0,.12)}
+[data-theme="dark"]{--ink:#f1f5f9;--ink-2:#cbd5e1;--ink-3:#94a3b8;--ink-4:#64748b;--bg:#0f172a;--surface:#1e293b;--border:#334155;--sky-light:#0c2a3f;--shadow:0 1px 3px rgba(0,0,0,.3),0 4px 12px rgba(0,0,0,.2);--shadow-md:0 4px 16px rgba(0,0,0,.35);--shadow-lg:0 12px 40px rgba(0,0,0,.5)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);transition:background .3s,color .3s;min-height:100vh}
+.app-shell{display:flex;min-height:100vh}
+.sidebar{width:260px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:50}
+.main-content{flex:1;margin-left:260px;min-height:100vh}
+.page{padding:32px;max-width:1100px}
+.sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border)}
+.logo-mark{display:flex;align-items:center;gap:10px}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,#0ea5e9,#0284c7);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px}
+.logo-text{font-family:'Instrument Serif',serif;font-size:20px;color:var(--ink)}
+.logo-text span{color:var(--sky)}
+.sidebar-user{padding:16px 20px;border-bottom:1px solid var(--border)}
+.user-pill{display:flex;align-items:center;gap:10px}
+.user-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#fff;flex-shrink:0}
+.user-name{font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-role{font-size:11px;color:var(--ink-3);text-transform:capitalize}
+.sidebar-nav{padding:12px 10px;flex:1;overflow-y:auto}
+.nav-label{font-size:10px;font-weight:600;color:var(--ink-4);letter-spacing:.08em;text-transform:uppercase;padding:8px 10px 4px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius-sm);cursor:pointer;font-size:14px;color:var(--ink-3);transition:all .15s;margin:1px 0;user-select:none}
+.nav-item:hover{background:var(--bg);color:var(--ink)}
+.nav-item.active{background:var(--sky-light);color:var(--sky);font-weight:500}
+.sidebar-footer{padding:12px 10px;border-top:1px solid var(--border)}
+.topbar{height:60px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 32px;position:sticky;top:0;z-index:40}
+.topbar-title{font-size:18px;font-weight:600;color:var(--ink)}
+.topbar-actions{display:flex;align-items:center;gap:12px}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:var(--radius-sm);font-size:14px;font-weight:500;cursor:pointer;border:none;transition:all .15s;font-family:'DM Sans',sans-serif}
+.btn-primary{background:var(--sky);color:#fff}
+.btn-primary:hover{background:var(--sky-dark);transform:translateY(-1px);box-shadow:0 4px 12px rgba(14,165,233,.3)}
+.btn-ghost{background:transparent;color:var(--ink-3)}
+.btn-ghost:hover{background:var(--bg);color:var(--ink)}
+.btn-outline{background:transparent;color:var(--sky);border:1.5px solid var(--sky)}
+.btn-outline:hover{background:var(--sky-light)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-sm{padding:6px 12px;font-size:13px}
+.btn-lg{padding:13px 28px;font-size:15px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow)}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;text-transform:capitalize}
+.badge-doctor{background:#dbeafe;color:#1d4ed8}
+.badge-nurse{background:#ede9fe;color:#6d28d9}
+.badge-admin{background:#fef3c7;color:#92400e}
+.badge-patient{background:#d1fae5;color:#065f46}
+.input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;color:var(--ink);background:var(--surface);font-family:'DM Sans',sans-serif;transition:border .15s;outline:none}
+.input:focus{border-color:var(--sky);box-shadow:0 0 0 3px rgba(14,165,233,.1)}
+.label{font-size:13px;font-weight:500;color:var(--ink-2);margin-bottom:6px;display:block}
+.form-group{margin-bottom:16px}
+textarea.input{resize:vertical;min-height:90px}
+.auth-page{min-height:100vh;display:flex;background:var(--bg)}
+.auth-left{flex:1;background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 50%,#0284c7 100%);display:flex;flex-direction:column;justify-content:center;padding:60px;position:relative;overflow:hidden}
+.auth-left::before{content:'';position:absolute;top:-100px;right:-100px;width:400px;height:400px;background:rgba(14,165,233,.12);border-radius:50%}
+.auth-hero h1{font-family:'Instrument Serif',serif;font-size:48px;color:#fff;line-height:1.1;margin-bottom:16px}
+.auth-hero h1 em{color:#7dd3fc;font-style:italic}
+.auth-hero p{color:rgba(255,255,255,.65);font-size:16px;line-height:1.7;max-width:380px}
+.auth-features{margin-top:40px;display:flex;flex-direction:column;gap:12px;position:relative;z-index:1}
+.auth-feature{display:flex;align-items:center;gap:12px;color:rgba(255,255,255,.8);font-size:14px}
+.auth-dot{width:8px;height:8px;border-radius:50%;background:var(--sky);flex-shrink:0}
+.auth-right{width:480px;display:flex;align-items:center;justify-content:center;padding:40px}
+.auth-box{width:100%;max-width:380px}
+.auth-box h2{font-size:26px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.auth-box p{color:var(--ink-3);font-size:14px;margin-bottom:28px}
+.auth-tabs{display:flex;gap:2px;margin-bottom:28px;background:var(--bg);border-radius:var(--radius-sm);padding:3px}
+.auth-tab{flex:1;text-align:center;padding:8px;border-radius:6px;cursor:pointer;font-size:14px;font-weight:500;color:var(--ink-3);transition:all .15s}
+.auth-tab.active{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.demo-accounts{margin-top:20px;border-top:1px solid var(--border);padding-top:16px}
+.demo-title{font-size:12px;color:var(--ink-4);margin-bottom:8px;font-weight:500}
+.demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.demo-btn{padding:8px 10px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;text-align:left;transition:all .15s}
+.demo-btn:hover{border-color:var(--sky);background:var(--sky-light)}
+.demo-role{font-size:11px;font-weight:600;text-transform:uppercase}
+.demo-email{font-size:11px;color:var(--ink-3);margin-top:1px}
+.splash{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px}
+.splash-logo{width:72px;height:72px;background:linear-gradient(135deg,#0ea5e9,#0284c7);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;box-shadow:0 8px 24px rgba(14,165,233,.35);animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.splash h1{font-family:'Instrument Serif',serif;font-size:56px;color:var(--ink);margin-bottom:16px}
+.splash h1 span{color:var(--sky)}
+.splash-sub{font-size:18px;color:var(--ink-3);max-width:540px;margin:0 auto 36px;line-height:1.7}
+.splash-features{display:flex;gap:20px;margin-bottom:48px;flex-wrap:wrap;justify-content:center}
+.splash-feature{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;flex:1;min-width:200px;max-width:240px;text-align:left;box-shadow:var(--shadow)}
+.splash-feature-icon{font-size:24px;margin-bottom:10px}
+.splash-feature h3{font-size:15px;font-weight:600;margin-bottom:4px}
+.splash-feature p{font-size:13px;color:var(--ink-3);line-height:1.5}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:28px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.stat-label{font-size:12px;color:var(--ink-3);font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.stat-value{font-size:32px;font-weight:700;color:var(--ink);line-height:1}
+.stat-sub{font-size:12px;color:var(--ink-4);margin-top:4px}
+.notes-grid{display:grid;gap:14px}
+.note-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);cursor:pointer;transition:all .15s}
+.note-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px);border-color:var(--sky)}
+.note-patient{font-size:15px;font-weight:600;color:var(--ink)}
+.note-date{font-size:12px;color:var(--ink-4)}
+.note-preview{font-size:13px;color:var(--ink-3);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin:8px 0}
+.search-bar{display:flex;gap:10px;margin-bottom:20px}
+.search-bar .input{flex:1}
+.filter-select{padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;color:var(--ink);background:var(--surface);font-family:'DM Sans',sans-serif;outline:none;cursor:pointer}
+.empty-state{text-align:center;padding:60px 20px;color:var(--ink-3)}
+.empty-state h3{font-size:16px;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.record-center{display:flex;flex-direction:column;align-items:center;gap:28px;max-width:600px;margin:0 auto}
+.mic-button{width:120px;height:120px;border-radius:50%;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:500;transition:all .2s;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;box-shadow:0 8px 24px rgba(14,165,233,.4)}
+.mic-button:hover{transform:scale(1.05)}
+.mic-button.recording{background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 8px 24px rgba(239,68,68,.4);animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(239,68,68,.4)}70%{box-shadow:0 0 0 20px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
+.mic-icon{font-size:36px}
+.timer{font-family:monospace;font-size:32px;font-weight:700;color:var(--ink);letter-spacing:.04em}
+.waveform{display:flex;align-items:center;gap:3px;height:40px}
+.wave-bar{width:4px;border-radius:2px;background:var(--sky);transition:height .1s}
+.upload-zone{width:100%;border:2px dashed var(--border);border-radius:var(--radius);padding:32px;text-align:center;cursor:pointer;transition:all .15s}
+.upload-zone:hover{border-color:var(--sky);background:var(--sky-light)}
+.divider{display:flex;align-items:center;gap:12px;width:100%;color:var(--ink-4);font-size:13px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.soap-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.soap-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.soap-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.soap-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.soap-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.soap-title{font-size:14px;font-weight:600;color:var(--ink)}
+.soap-body{padding:16px 18px}
+.soap-body textarea{border:none;outline:none;background:transparent;width:100%;font-size:13px;color:var(--ink-2);line-height:1.7;font-family:'DM Sans',sans-serif;resize:none;min-height:100px}
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse}
+th{padding:12px 16px;text-align:left;font-size:12px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);background:var(--bg)}
+td{padding:14px 16px;font-size:14px;color:var(--ink-2);border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg)}
+.patient-note{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px;box-shadow:var(--shadow)}
+.patient-note-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.patient-note-body{padding:20px}
+.soap-tag{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#fff;border-radius:4px;padding:2px 7px;margin-bottom:6px}
+.tag-s{background:#0ea5e9}.tag-o{background:#8b5cf6}.tag-a{background:#f59e0b}.tag-p{background:#10b981}
+.soap-content-text{font-size:14px;color:var(--ink-2);line-height:1.7;margin-bottom:16px;white-space:pre-wrap}
+.loading-page{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;gap:24px;text-align:center}
+.spinner{width:48px;height:48px;border:3px solid var(--border);border-top-color:var(--sky);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.dots-loader{display:flex;gap:6px}
+.dot-bounce{width:10px;height:10px;border-radius:50%;background:var(--sky);animation:bounce .8s ease-in-out infinite}
+.dot-bounce:nth-child(2){animation-delay:.15s}
+.dot-bounce:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,80%,100%{transform:scale(0.8);opacity:.5}40%{transform:scale(1.2);opacity:1}}
+.toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;font-size:14px;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:10px;max-width:320px;animation:slide-in .25s ease;pointer-events:all}
+@keyframes slide-in{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+.toast.success{border-left:3px solid var(--success)}
+.toast.error{border-left:3px solid var(--danger)}
+.toast.info{border-left:3px solid var(--sky)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--surface);border-radius:var(--radius);padding:28px;max-width:480px;width:100%;box-shadow:var(--shadow-lg)}
+.modal h2{font-size:18px;font-weight:700;margin-bottom:20px}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.section-title{font-size:20px;font-weight:700;color:var(--ink)}
+.section-sub{font-size:13px;color:var(--ink-3);margin-top:3px}
+.transcript-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;font-size:13px;color:var(--ink-2);line-height:1.7;max-height:150px;overflow-y:auto;white-space:pre-wrap}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500;background:var(--bg);border:1px solid var(--border);color:var(--ink-3)}
+.step-bar{display:flex;align-items:center;margin-bottom:28px}
+.step-dot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.step-line{flex:1;height:2px;margin:0 8px;border-radius:2px}
+.info-box{margin-top:16px;background:var(--sky-light);border-radius:var(--radius-sm);padding:12px 14px}
+.info-box-title{font-size:12px;font-weight:600;color:var(--sky);margin-bottom:6px}
+.info-grid{font-size:12px;color:var(--ink-2);display:grid;grid-template-columns:1fr 1fr;gap:4px}
+@media(max-width:768px){.sidebar{transform:translateX(-100%)}.main-content{margin-left:0}.soap-grid{grid-template-columns:1fr}.auth-left{display:none}.auth-right{width:100%}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toasts" class="toast-container"></div>
+<script>
+var API = 'http://localhost:8000';
+var state = {
+  page: 'splash', user: null, token: null, notes: [], currentNote: null,
+  loading: false, darkMode: false, recording: false, recordingTime: 0,
+  transcript: '', generatedNote: null, users: [], analytics: null,
+  searchQuery: '', authTab: 'login', showUserModal: false,
+  waveHeights: [6,8,12,6,10,14,6,8,10,6,12,8,6,10,8,14,6,8,12,6]
+};
+
+try {
+  var saved = localStorage.getItem('scribe_auth');
+  if (saved) {
+    var d = JSON.parse(saved);
+    state.user = d.user; state.token = d.token;
+    state.page = routeForRole(d.user.role);
+  }
+} catch(e) {}
+
+function routeForRole(role) {
+  if (role === 'admin') return 'admin';
+  if (role === 'patient') return 'patient';
+  return 'dashboard';
+}
+
+// ── ICONS ──────────────────────────────────────────────────────────────
+function svgHome()    { return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>'; }
+function svgMic()     { return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>'; }
+function svgHistory() { return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.31"/></svg>'; }
+function svgUsers()   { return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'; }
+function svgFile()    { return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'; }
+function svgLogout()  { return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>'; }
+function svgPlus()    { return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'; }
+
+// ── HELPERS ────────────────────────────────────────────────────────────
+function fmtDate(s) {
+  if (!s) return '-';
+  var d = new Date(s);
+  return isNaN(d) ? s : d.toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'});
+}
+function fmtTimer(s) {
+  return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
+}
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function toast(msg, type) {
+  type = type || 'info';
+  var c = document.getElementById('toasts');
+  var el = document.createElement('div');
+  el.className = 'toast ' + type;
+  var icon = type === 'success' ? '&#10003;' : type === 'error' ? '&#10007;' : 'i';
+  el.innerHTML = '<span>' + icon + '</span> ' + msg;
+  c.appendChild(el);
+  setTimeout(function() { el.remove(); }, 3500);
+}
+function roleColor(r) {
+  return {doctor:'#0284c7',nurse:'#7c3aed',admin:'#d97706',patient:'#059669'}[r] || '#64748b';
+}
+function roleIcon(r) {
+  return {doctor:'&#x1F9BA;',nurse:'&#x1F489;',admin:'&#x2699;&#xFE0F;',patient:'&#x1F9D1;'}[r] || '&#x1F464;';
+}
+
+// ── API ────────────────────────────────────────────────────────────────
+function apiCall(method, path, body, isForm) {
+  var headers = {};
+  if (state.token) headers['Authorization'] = 'Bearer ' + state.token;
+  if (!isForm) headers['Content-Type'] = 'application/json';
+  var opts = { method: method, headers: headers };
+  if (body) opts.body = isForm ? body : JSON.stringify(body);
+  return fetch(API + path, opts).then(function(res) {
+    if (!res.ok) return res.json().catch(function() { return {detail:'Request failed'}; }).then(function(e) { throw new Error(e.detail || 'Error'); });
+    return res.json();
+  }).catch(function(e) {
+    if (e.message === 'Failed to fetch') return mockApi(method, path, body);
+    throw e;
+  });
+}
+
+function getMockNotes() {
+  try { var s = localStorage.getItem('mock_notes'); if (s) return JSON.parse(s); } catch(e) {}
+  return [
+    {id:1,patient_name:'Emily Thompson',subjective:'Patient reports persistent headaches for 3 days, rated 7/10. Associated nausea and light sensitivity.',objective:'BP: 128/82, HR: 78 bpm, Temp: 98.6F, SpO2: 99%. Neuro exam normal.',assessment:'Migraine without aura.',plan:'1. Sumatriptan 50mg PRN\n2. Increase fluid intake\n3. Follow up in 2 weeks',raw_transcript:'Emily came in with headaches for 3 days...',created_at:'2024-01-15T10:30:00',doctor_name:'Dr. Sarah Chen'},
+    {id:2,patient_name:'Marcus Johnson',subjective:'Productive cough 5 days, yellow-green sputum, mild fever, fatigue.',objective:'Temp: 101.2F, BP: 122/78, HR: 88. Crackles right lower lobe.',assessment:'Community-acquired pneumonia, right lower lobe.',plan:'1. Amoxicillin 500mg TID x7 days\n2. Chest X-ray\n3. Push fluids',raw_transcript:'Marcus came with cough for 5 days...',created_at:'2024-01-14T14:00:00',doctor_name:'Dr. Sarah Chen'},
+    {id:3,patient_name:'Sofia Reyes',subjective:'Annual wellness. Mild fatigue, occasional back pain from desk work.',objective:'BMI: 23.4, BP: 118/74, HR: 72. All vitals normal.',assessment:'Healthy adult, mild occupational strain.',plan:'1. Ergonomic assessment\n2. Core strengthening\n3. Annual labs',raw_transcript:'Annual checkup...',created_at:'2024-01-13T09:15:00',doctor_name:'Dr. Sarah Chen'}
+  ];
+}
+
+function mockApi(method, path, body) {
+  var accounts = {
+    'doctor@scribe.ai':{id:1,name:'Dr. Sarah Chen',email:'doctor@scribe.ai',role:'doctor'},
+    'nurse@scribe.ai':{id:2,name:'Nurse Alex Kim',email:'nurse@scribe.ai',role:'nurse'},
+    'admin@scribe.ai':{id:3,name:'Admin User',email:'admin@scribe.ai',role:'admin'},
+    'patient@scribe.ai':{id:4,name:'John Patient',email:'patient@scribe.ai',role:'patient'}
+  };
+  if (path === '/login') {
+    if (body.password !== 'password123') throw new Error('Invalid credentials');
+    var u = accounts[body.email];
+    if (!u) throw new Error('User not found');
+    return Promise.resolve({token:'mock_'+u.role, user:u});
+  }
+  if (path === '/signup') return Promise.resolve({message:'Created'});
+  if (path === '/notes' && method === 'GET') return Promise.resolve(getMockNotes());
+  if (path === '/save-note') {
+    var notes = getMockNotes();
+    var n = Object.assign({id:Date.now(),created_at:new Date().toISOString(),doctor_name:state.user.name}, body);
+    notes.unshift(n); localStorage.setItem('mock_notes', JSON.stringify(notes));
+    return Promise.resolve({message:'Saved'});
+  }
+  if (path.indexOf('/notes/') === 0 && method === 'DELETE') {
+    var id = parseInt(path.split('/')[2]);
+    var ns = getMockNotes().filter(function(n) { return n.id !== id; });
+    localStorage.setItem('mock_notes', JSON.stringify(ns));
+    return Promise.resolve({message:'Deleted'});
+  }
+  if (path === '/transcribe') {
+    var samples = [
+      'Patient is a 52-year-old male with chest discomfort for 3 hours. Pressure-like, radiating to left jaw. Rates 7/10. History of hypertension. Takes lisinopril. No previous cardiac events.',
+      '34-year-old female with 5-day productive cough, yellow-green sputum, low-grade fever. Works as a teacher. No known allergies. Not on medications.',
+      '65-year-old male follow-up for hypertension. BP running 155/95 at home. On amlodipine 5mg daily. Occasional headaches and mild exertional dyspnea.'
+    ];
+    return Promise.resolve({transcript: samples[Math.floor(Math.random()*samples.length)]});
+  }
+  if (path === '/generate-notes') {
+    var t = body.transcript.toLowerCase();
+    var notes;
+    if (t.indexOf('chest') >= 0 || t.indexOf('jaw') >= 0) {
+      notes = {subjective:'Patient reports 3-hour history of pressure-like chest pain radiating to the left jaw, rated 7/10.',objective:'BP: 152/94, HR: 96, Temp: 98.8F, SpO2: 97%. Diaphoretic. Regular rhythm, no murmurs.',assessment:'Acute chest pain - rule out acute coronary syndrome.',plan:'1. ECG stat\n2. Troponin x2\n3. Aspirin 325mg\n4. Cardiology consult\n5. Continuous monitoring'};
+    } else if (t.indexOf('cough') >= 0 || t.indexOf('sputum') >= 0) {
+      notes = {subjective:'5-day productive cough with yellow-green sputum, fever and fatigue. Occupational exposure.',objective:'Temp: 101.4F, BP: 118/72, HR: 90. Decreased breath sounds right lower lobe.',assessment:'Community-acquired pneumonia, right lower lobe.',plan:'1. Chest X-ray\n2. Azithromycin 500mg day 1, 250mg days 2-5\n3. Push fluids\n4. Follow up 72h'};
+    } else {
+      notes = {subjective:'Elevated BP at home 155/95. On amlodipine 5mg. Headaches and mild exertional dyspnea.',objective:'BP: 158/96, HR: 78, Temp: 98.2F, SpO2: 99%. Regular rate and rhythm.',assessment:'Hypertension, inadequately controlled.',plan:'1. Increase amlodipine to 10mg\n2. Add lisinopril 10mg\n3. BMP and ECG\n4. Follow up 2 weeks'};
+    }
+    return Promise.resolve({notes: notes});
+  }
+  if (path === '/users') return Promise.resolve([
+    {id:1,name:'Dr. Sarah Chen',email:'doctor@scribe.ai',role:'doctor',is_active:1,notes_count:3},
+    {id:2,name:'Nurse Alex Kim',email:'nurse@scribe.ai',role:'nurse',is_active:1,notes_count:1},
+    {id:3,name:'Admin User',email:'admin@scribe.ai',role:'admin',is_active:1,notes_count:0},
+    {id:4,name:'John Patient',email:'patient@scribe.ai',role:'patient',is_active:1,notes_count:0}
+  ]);
+  if (path === '/analytics') return Promise.resolve({
+    total_users:4, total_notes:getMockNotes().length,
+    by_role:[{role:'doctor',cnt:1},{role:'nurse',cnt:1},{role:'admin',cnt:1},{role:'patient',cnt:1}],
+    recent_activity:getMockNotes().slice(0,5).map(function(n){return{patient_name:n.patient_name,doctor:n.doctor_name,created_at:n.created_at};})
+  });
+  if (method === 'DELETE') return Promise.resolve({message:'Deleted'});
+  if (method === 'POST') return Promise.resolve({message:'Done'});
+  return Promise.resolve({});
+}
+
+// ── RENDER ──────────────────────────────────────────────────────────────
+function render() {
+  var app = document.getElementById('app');
+  document.body.setAttribute('data-theme', state.darkMode ? 'dark' : '');
+  if (!state.user) {
+    if (state.page === 'splash') { app.innerHTML = renderSplash(); attachSplashEvents(); return; }
+    app.innerHTML = renderAuth(); attachAuthEvents(); return;
+  }
+  var sidebar = renderSidebar();
+  var main = '';
+  if (state.page === 'dashboard') main = renderDashboard();
+  else if (state.page === 'record') main = renderRecord();
+  else if (state.page === 'loading') main = renderLoading();
+  else if (state.page === 'notes') main = renderNotes();
+  else if (state.page === 'admin') main = renderAdmin();
+  else if (state.page === 'patient') main = renderPatient();
+  else if (state.page === 'history') main = renderHistory();
+  else main = renderDashboard();
+  app.innerHTML = sidebar + '<div class="main-content">' + main + '</div>';
+  if (state.showUserModal) {
+    var mo = document.createElement('div');
+    mo.innerHTML = renderUserModal();
+    app.appendChild(mo.firstChild);
+  }
+  attachAppEvents();
+}
+
+// ── SPLASH ──────────────────────────────────────────────────────────────
+function renderSplash() {
+  return '<div class="splash">'
+    + '<div class="splash-logo"><svg width="36" height="36" viewBox="0 0 36 36" fill="none"><path d="M8 28V12l10-6 10 6v16l-10 6L8 28z" fill="rgba(255,255,255,.2)" stroke="white" stroke-width="1.5"/><path d="M18 8v20M8 14l10 6 10-6" stroke="white" stroke-width="1.5"/></svg></div>'
+    + '<h1>The future of medical <span>documentation</span></h1>'
+    + '<p class="splash-sub">Scribe AI transforms patient conversations into structured SOAP notes instantly.</p>'
+    + '<div class="splash-features">'
+    + '<div class="splash-feature"><div class="splash-feature-icon">&#127897;</div><h3>Voice Recording</h3><p>Record or upload patient conversations with a single tap.</p></div>'
+    + '<div class="splash-feature"><div class="splash-feature-icon">&#129504;</div><h3>AI-Powered Notes</h3><p>Generate complete SOAP notes automatically from transcripts.</p></div>'
+    + '<div class="splash-feature"><div class="splash-feature-icon">&#128274;</div><h3>Role-Based Access</h3><p>Doctor, nurse, admin, and patient roles with precise permissions.</p></div>'
+    + '<div class="splash-feature"><div class="splash-feature-icon">&#128203;</div><h3>Edit &amp; Export</h3><p>Refine notes and download for your records instantly.</p></div>'
+    + '</div>'
+    + '<button class="btn btn-primary btn-lg" id="btn-get-started">Get started</button>'
+    + '<p style="color:var(--ink-4);font-size:13px;margin-top:12px">HIPAA-ready demo</p>'
+    + '</div>';
+}
+
+// ── AUTH ────────────────────────────────────────────────────────────────
+function renderAuth() {
+  var isLogin = state.authTab === 'login';
+  var signupFields = isLogin ? '' :
+    '<div class="form-group"><label class="label">Full name</label><input class="input" id="auth-name" placeholder="Dr. Jane Smith"></div>';
+  var roleField = isLogin ? '' :
+    '<div class="form-group"><label class="label">Role</label><select class="input" id="auth-role"><option value="doctor">Doctor</option><option value="nurse">Nurse</option><option value="patient">Patient</option></select></div>';
+  var demoSection = !isLogin ? '' :
+    '<div class="demo-accounts"><div class="demo-title">Demo accounts (click to fill)</div><div class="demo-grid">'
+    + '<button class="demo-btn" data-demo="doctor@scribe.ai"><div class="demo-role" style="color:#0284c7">Doctor</div><div class="demo-email">doctor@scribe.ai</div></button>'
+    + '<button class="demo-btn" data-demo="nurse@scribe.ai"><div class="demo-role" style="color:#7c3aed">Nurse</div><div class="demo-email">nurse@scribe.ai</div></button>'
+    + '<button class="demo-btn" data-demo="admin@scribe.ai"><div class="demo-role" style="color:#d97706">Admin</div><div class="demo-email">admin@scribe.ai</div></button>'
+    + '<button class="demo-btn" data-demo="patient@scribe.ai"><div class="demo-role" style="color:#059669">Patient</div><div class="demo-email">patient@scribe.ai</div></button>'
+    + '</div></div>';
+
+  return '<div class="auth-page">'
+    + '<div class="auth-left"><div class="auth-hero" style="position:relative;z-index:1">'
+    + '<h1>Clinical notes,<br><em>reimagined</em></h1>'
+    + '<p>Save hours of documentation time with AI-powered SOAP note generation.</p>'
+    + '</div><div class="auth-features">'
+    + '<div class="auth-feature"><div class="auth-dot"></div>Automatic speech-to-text transcription</div>'
+    + '<div class="auth-feature"><div class="auth-dot"></div>Structured SOAP note generation</div>'
+    + '<div class="auth-feature"><div class="auth-dot"></div>Secure role-based access control</div>'
+    + '<div class="auth-feature"><div class="auth-dot"></div>Edit, save and export in seconds</div>'
+    + '</div></div>'
+    + '<div class="auth-right"><div class="auth-box">'
+    + '<button class="btn btn-ghost btn-sm" id="btn-back-splash" style="margin-bottom:20px;padding-left:0">Back</button>'
+    + '<h2>' + (isLogin ? 'Welcome back' : 'Create account') + '</h2>'
+    + '<p>' + (isLogin ? 'Sign in to your Scribe AI account' : 'Start your free demo account') + '</p>'
+    + '<div class="auth-tabs">'
+    + '<div class="auth-tab ' + (isLogin?'active':'') + '" data-tab="login">Sign in</div>'
+    + '<div class="auth-tab ' + (!isLogin?'active':'') + '" data-tab="signup">Sign up</div>'
+    + '</div>'
+    + signupFields
+    + '<div class="form-group"><label class="label">Email address</label><input class="input" id="auth-email" type="email" placeholder="you@example.com" value="' + (isLogin?'doctor@scribe.ai':'') + '"></div>'
+    + '<div class="form-group"><label class="label">Password</label><input class="input" id="auth-password" type="password" placeholder="Password" value="' + (isLogin?'password123':'') + '"></div>'
+    + roleField
+    + '<button class="btn btn-primary" id="btn-auth-submit" style="width:100%;justify-content:center">' + (isLogin?'Sign in':'Create account') + '</button>'
+    + demoSection
+    + '</div></div></div>';
+}
+
+// ── SIDEBAR ─────────────────────────────────────────────────────────────
+function renderSidebar() {
+  var role = state.user.role;
+  var initials = state.user.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+  var navDefs = [
+    {icon:svgHome(),   label:'Dashboard',     page:'dashboard', roles:['doctor','nurse','admin','patient']},
+    {icon:svgMic(),    label:'New Recording', page:'record',    roles:['doctor','nurse']},
+    {icon:svgHistory(),label:'History',       page:'history',   roles:['doctor','nurse']},
+    {icon:svgUsers(),  label:'Users',         page:'admin',     roles:['admin']},
+    {icon:svgFile(),   label:'My Records',    page:'patient',   roles:['patient']}
+  ];
+  var navHtml = '';
+  navDefs.forEach(function(n) {
+    if (n.roles.indexOf(role) >= 0) {
+      navHtml += '<div class="nav-item ' + (state.page===n.page?'active':'') + '" data-nav="' + n.page + '">' + n.icon + ' <span>' + n.label + '</span></div>';
+    }
+  });
+  return '<div class="sidebar">'
+    + '<div class="sidebar-logo"><div class="logo-mark"><div class="logo-icon">&#10022;</div><div class="logo-text">Scribe<span>AI</span></div></div></div>'
+    + '<div class="sidebar-user"><div class="user-pill"><div class="user-avatar" style="background:' + roleColor(role) + '">' + initials + '</div>'
+    + '<div><div class="user-name">' + esc(state.user.name) + '</div><div class="user-role">' + role + '</div></div></div></div>'
+    + '<div class="sidebar-nav"><div class="nav-label">Navigation</div>' + navHtml + '</div>'
+    + '<div class="sidebar-footer">'
+    + '<div class="nav-item" id="btn-dark">' + (state.darkMode?'&#9728;':'&#127769;') + ' <span>' + (state.darkMode?'Light mode':'Dark mode') + '</span></div>'
+    + '<div class="nav-item" id="btn-logout">' + svgLogout() + ' <span>Sign out</span></div>'
+    + '</div></div>';
+}
+
+// ── DASHBOARD ───────────────────────────────────────────────────────────
+function renderDashboard() {
+  var role = state.user.role;
+  var filtered = state.notes.filter(function(n) {
+    if (!state.searchQuery) return true;
+    var q = state.searchQuery.toLowerCase();
+    return n.patient_name.toLowerCase().indexOf(q) >= 0 || (n.subjective||'').toLowerCase().indexOf(q) >= 0;
+  });
+  var uniquePts = [];
+  var seen = {};
+  state.notes.forEach(function(n) { if (!seen[n.patient_name]) { seen[n.patient_name]=1; uniquePts.push(n.patient_name); } });
+  var weekAgo = Date.now() - 7*24*60*60*1000;
+  var thisWeek = state.notes.filter(function(n) { return new Date(n.created_at).getTime() > weekAgo; }).length;
+  var complete = state.notes.filter(function(n) { return n.plan; }).length;
+
+  var ptOptions = '<option value="">All patients</option>';
+  uniquePts.forEach(function(p) { ptOptions += '<option value="' + esc(p) + '" ' + (state.searchQuery===p?'selected':'') + '>' + esc(p) + '</option>'; });
+
+  var newBtn = role !== 'patient' ? '<button class="btn btn-primary btn-sm" data-nav="record">' + svgMic() + ' New Recording</button>' : '';
+
+  var noteCards = '';
+  if (filtered.length === 0) {
+    noteCards = '<div class="empty-state"><p style="font-size:40px;margin-bottom:12px">&#128203;</p><h3>No notes found</h3><p>Start by recording a patient conversation</p></div>';
+  } else {
+    filtered.forEach(function(n) {
+      var deleteBtn = (role==='doctor'||role==='admin') ? '<button class="btn btn-ghost btn-sm" style="color:var(--danger)" data-delete-note="' + n.id + '">Delete</button>' : '';
+      noteCards += '<div class="note-card" data-note-id="' + n.id + '">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+        + '<div class="note-patient">&#128100; ' + esc(n.patient_name) + '</div>'
+        + '<div class="note-date">' + fmtDate(n.created_at) + '</div></div>'
+        + '<div class="note-preview">' + esc(n.subjective || 'No subjective section') + '</div>'
+        + '<div style="display:flex;gap:8px;margin-top:10px">'
+        + '<button class="btn btn-outline btn-sm" data-view-note="' + n.id + '">View Note</button>'
+        + deleteBtn + '</div></div>';
+    });
+  }
+
+  return '<div class="topbar"><div class="topbar-title">Dashboard</div><div class="topbar-actions">' + newBtn + '</div></div>'
+    + '<div class="page">'
+    + '<div class="stats-grid">'
+    + '<div class="stat-card"><div style="font-size:28px;margin-bottom:8px">&#128203;</div><div class="stat-label">Total Notes</div><div class="stat-value">' + state.notes.length + '</div><div class="stat-sub">All time</div></div>'
+    + '<div class="stat-card"><div style="font-size:28px;margin-bottom:8px">&#128197;</div><div class="stat-label">This Week</div><div class="stat-value">' + thisWeek + '</div><div class="stat-sub">Recent notes</div></div>'
+    + '<div class="stat-card"><div style="font-size:28px;margin-bottom:8px">&#128100;</div><div class="stat-label">Patients</div><div class="stat-value">' + uniquePts.length + '</div><div class="stat-sub">Unique patients</div></div>'
+    + '<div class="stat-card"><div style="font-size:28px;margin-bottom:8px">&#9989;</div><div class="stat-label">Completed</div><div class="stat-value">' + complete + '</div><div class="stat-sub">With full SOAP</div></div>'
+    + '</div>'
+    + '<div class="section-header"><div><div class="section-title">Recent Notes</div><div class="section-sub">Patient SOAP documentation</div></div></div>'
+    + '<div class="search-bar"><input class="input" id="search-input" placeholder="Search patients or notes..." value="' + esc(state.searchQuery) + '"><select class="filter-select" id="filter-select">' + ptOptions + '</select></div>'
+    + '<div class="notes-grid">' + noteCards + '</div></div>';
+}
+
+// ── HISTORY ─────────────────────────────────────────────────────────────
+function renderHistory() {
+  var rows = state.notes.length === 0
+    ? '<tr><td colspan="4" style="text-align:center;color:var(--ink-4);padding:40px">No notes yet</td></tr>'
+    : state.notes.map(function(n) {
+        return '<tr><td><strong>' + esc(n.patient_name) + '</strong></td><td>' + fmtDate(n.created_at) + '</td>'
+          + '<td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-3)">' + esc(n.subjective||'-') + '</td>'
+          + '<td><button class="btn btn-outline btn-sm" data-view-note="' + n.id + '">View</button></td></tr>';
+      }).join('');
+  return '<div class="topbar"><div class="topbar-title">Note History</div></div>'
+    + '<div class="page"><div class="section-header"><div class="section-title">All Notes</div></div>'
+    + '<div class="table-wrap"><table><thead><tr><th>Patient</th><th>Date</th><th>Preview</th><th>Actions</th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
+}
+
+// ── RECORD PAGE ─────────────────────────────────────────────────────────
+function renderStepBar(step) {
+  var line = step > 1 ? 'var(--sky)' : 'var(--border)';
+  var s2bg = step >= 2 ? 'var(--sky)' : 'var(--border)';
+  var s2c  = step >= 2 ? '#fff' : 'var(--ink-4)';
+  return '<div class="step-bar">'
+    + '<div style="display:flex;align-items:center;gap:8px;flex:1">'
+    + '<div class="step-dot" style="background:var(--sky);color:#fff;">1</div>'
+    + '<span style="font-size:13px;font-weight:' + (step===1?'600':'400') + ';color:' + (step===1?'var(--ink)':'var(--ink-4)') + ';">Record / Upload</span>'
+    + '<div class="step-line" style="background:' + line + ';"></div>'
+    + '</div>'
+    + '<div style="display:flex;align-items:center;gap:8px">'
+    + '<div class="step-dot" style="background:' + s2bg + ';color:' + s2c + ';">2</div>'
+    + '<span style="font-size:13px;font-weight:' + (step===2?'600':'400') + ';color:' + (step===2?'var(--ink)':'var(--ink-4)') + ';">Review &amp; Generate</span>'
+    + '</div></div>';
+}
+
+function renderRecord() {
+  var step = state.transcript ? 2 : 1;
+  var stepBar = renderStepBar(step);
+
+  if (state.transcript) {
+    return '<div class="topbar"><div class="topbar-title">New Recording</div>'
+      + '<div class="topbar-actions"><button class="btn btn-ghost btn-sm" id="btn-retranscribe">&#8592; Re-record</button></div></div>'
+      + '<div class="page" style="max-width:700px">' + stepBar
+      + '<div class="card" style="margin-bottom:16px">'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'
+      + '<div style="width:8px;height:8px;border-radius:50%;background:var(--success)"></div>'
+      + '<span style="font-size:13px;font-weight:600;color:var(--ink-2)">Transcription complete</span></div>'
+      + '<div class="transcript-box">' + esc(state.transcript) + '</div>'
+      + '<p style="font-size:12px;color:var(--ink-4);margin-top:8px">The AI extracts only clinical information. Filler words are ignored automatically.</p>'
+      + '</div>'
+      + '<div class="card">'
+      + '<h3 style="font-size:15px;font-weight:700;margin-bottom:16px">Generate SOAP Note</h3>'
+      + '<div class="form-group"><label class="label">Patient Name <span style="color:var(--danger)">*</span></label>'
+      + '<input class="input" id="patient-name-input" placeholder="e.g. John Smith" autofocus></div>'
+      + '<div class="form-group"><label class="label">Additional context <span style="color:var(--ink-4);font-weight:400">(optional)</span></label>'
+      + '<textarea class="input" id="extra-context" rows="2" placeholder="e.g. diabetic patient, follow-up visit, allergic to penicillin..."></textarea></div>'
+      + '<button class="btn btn-primary btn-lg" id="btn-generate" style="width:100%;justify-content:center">Generate SOAP Note from Audio</button>'
+      + '<p style="text-align:center;font-size:12px;color:var(--ink-4);margin-top:10px">Gemini AI will structure this into a full clinical SOAP note</p>'
+      + '</div></div>';
+  }
+
+  var heights = state.waveHeights.map(function(h) { return '<div class="wave-bar" style="height:'+h+'px"></div>'; }).join('');
+  var recClass = state.recording ? 'mic-button recording' : 'mic-button';
+  var recMsg = state.recording
+    ? '<p style="margin-top:16px;font-size:13px;color:var(--danger);font-weight:500">Recording... speak clearly</p>'
+    : '<p style="margin-top:16px;font-size:13px;color:var(--ink-4)">Click to begin. Works best with clear audio.</p>';
+
+  return '<div class="topbar"><div class="topbar-title">New Recording</div></div>'
+    + '<div class="page" style="max-width:700px">' + stepBar
+    + '<div class="record-center">'
+    + '<div class="card" style="width:100%;text-align:center;padding:32px 40px">'
+    + '<h2 style="font-size:18px;font-weight:700;margin-bottom:6px">Record Patient Conversation</h2>'
+    + '<p style="color:var(--ink-3);font-size:14px;margin-bottom:24px">Speak naturally - include symptoms, vitals, history and plan</p>'
+    + '<div class="waveform" style="justify-content:center;margin-bottom:16px">' + heights + '</div>'
+    + '<div class="timer" style="margin-bottom:20px">' + fmtTimer(state.recordingTime) + '</div>'
+    + '<button class="' + recClass + '" id="btn-record">'
+    + '<div class="mic-icon">' + (state.recording ? '&#9711;' : '&#127897;') + '</div>'
+    + '<span style="font-size:12px">' + (state.recording ? 'Stop recording' : 'Start recording') + '</span>'
+    + '</button>' + recMsg + '</div>'
+    + '<div class="divider">or upload an audio file</div>'
+    + '<div class="card" style="width:100%;padding:24px">'
+    + '<h3 style="font-size:15px;font-weight:600;margin-bottom:4px">Upload Audio File</h3>'
+    + '<p style="font-size:13px;color:var(--ink-3);margin-bottom:14px">Upload any recording of a doctor-patient consultation</p>'
+    + '<div class="upload-zone" id="upload-zone" onclick="document.getElementById(\'file-input\').click()">'
+    + '<div style="font-size:36px;margin-bottom:8px">&#128193;</div>'
+    + '<div style="font-size:14px;font-weight:600;color:var(--ink-2)">Drop audio here or click to browse</div>'
+    + '<div style="font-size:12px;color:var(--ink-4);margin-top:6px">MP3 - WAV - M4A - OGG - WEBM</div>'
+    + '</div><input type="file" id="file-input" accept="audio/*" style="display:none">'
+    + '<div class="info-box"><div class="info-box-title">For best SOAP quality, include in your recording:</div>'
+    + '<div class="info-grid">'
+    + '<span>Chief complaint &amp; duration</span><span>Vitals (BP, HR, temp, SpO2)</span>'
+    + '<span>Associated symptoms</span><span>Physical exam findings</span>'
+    + '<span>Past medical history</span><span>Treatment plan &amp; medications</span>'
+    + '</div></div></div></div></div>';
+}
+
+// ── LOADING ─────────────────────────────────────────────────────────────
+function renderLoading() {
+  return '<div class="topbar"><div class="topbar-title">Processing</div></div>'
+    + '<div class="page"><div class="loading-page">'
+    + '<div class="spinner" style="width:56px;height:56px"></div>'
+    + '<div><h2 style="font-size:22px;font-weight:700;margin-bottom:8px">Generating SOAP Notes</h2>'
+    + '<p style="color:var(--ink-3)">AI is analyzing the transcript and structuring your clinical documentation...</p></div>'
+    + '<div class="dots-loader"><div class="dot-bounce"></div><div class="dot-bounce"></div><div class="dot-bounce"></div></div>'
+    + '<p style="font-size:13px;color:var(--ink-4)">This usually takes 5-10 seconds</p>'
+    + '</div></div>';
+}
+
+// ── NOTES VIEW ──────────────────────────────────────────────────────────
+function renderNotes() {
+  var note = state.currentNote;
+  if (!note) return '<div class="topbar"><div class="topbar-title">Note</div></div><div class="page"><div class="empty-state"><h3>No note selected</h3></div></div>';
+  var canEdit = state.user.role === 'doctor' || state.user.role === 'nurse';
+  var ro = canEdit ? '' : ' readonly';
+  var saveBtn = canEdit ? '<button class="btn btn-primary btn-sm" id="btn-save-note">Save Note</button>' : '';
+  var docChip = note.doctor_name ? '<div class="chip">' + esc(note.doctor_name) + '</div>' : '';
+  var transcriptBox = note.raw_transcript ? '<div style="margin-bottom:16px"><div class="label">Raw Transcript</div><div class="transcript-box">' + esc(note.raw_transcript) + '</div></div>' : '';
+
+  return '<div class="topbar"><div class="topbar-title">&#128203; ' + esc(note.patient_name) + '</div>'
+    + '<div class="topbar-actions">'
+    + '<button class="btn btn-ghost btn-sm" data-nav="dashboard">&#8592; Back</button>'
+    + saveBtn
+    + '<button class="btn btn-outline btn-sm" id="btn-download-note">Download</button>'
+    + '<button class="btn btn-ghost btn-sm" id="btn-copy-note">Copy</button>'
+    + '</div></div>'
+    + '<div class="page">'
+    + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">'
+    + '<div style="font-size:13px;color:var(--ink-3)">Created: ' + fmtDate(note.created_at) + '</div>'
+    + docChip + '</div>'
+    + transcriptBox
+    + '<div class="soap-grid">'
+    + '<div class="soap-section"><div class="soap-header"><div class="soap-dot" style="background:#0ea5e9"></div><div><div class="soap-label" style="color:#0ea5e9">S</div><div class="soap-title">Subjective</div></div></div><div class="soap-body"><textarea id="soap-s"' + ro + '>' + esc(note.subjective||'') + '</textarea></div></div>'
+    + '<div class="soap-section"><div class="soap-header"><div class="soap-dot" style="background:#8b5cf6"></div><div><div class="soap-label" style="color:#8b5cf6">O</div><div class="soap-title">Objective</div></div></div><div class="soap-body"><textarea id="soap-o"' + ro + '>' + esc(note.objective||'') + '</textarea></div></div>'
+    + '<div class="soap-section"><div class="soap-header"><div class="soap-dot" style="background:#f59e0b"></div><div><div class="soap-label" style="color:#f59e0b">A</div><div class="soap-title">Assessment</div></div></div><div class="soap-body"><textarea id="soap-a"' + ro + '>' + esc(note.assessment||'') + '</textarea></div></div>'
+    + '<div class="soap-section"><div class="soap-header"><div class="soap-dot" style="background:#10b981"></div><div><div class="soap-label" style="color:#10b981">P</div><div class="soap-title">Plan</div></div></div><div class="soap-body"><textarea id="soap-p"' + ro + '>' + esc(note.plan||'') + '</textarea></div></div>'
+    + '</div></div>';
+}
+
+// ── ADMIN ───────────────────────────────────────────────────────────────
+function renderAdmin() {
+  var an = state.analytics || {};
+  var byRole = an.by_role || [];
+  var roleStat = byRole.map(function(r) {
+    return '<div class="stat-card"><div style="font-size:28px;margin-bottom:8px">' + roleIcon(r.role) + '</div><div class="stat-label">' + r.role + 's</div><div class="stat-value">' + r.cnt + '</div></div>';
+  }).join('');
+  var userRows = state.users.map(function(u) {
+    var disabled = u.id === state.user.id ? ' disabled' : '';
+    return '<tr><td><strong>' + esc(u.name) + '</strong></td><td style="color:var(--ink-3)">' + esc(u.email) + '</td>'
+      + '<td><span class="badge badge-' + u.role + '">' + u.role + '</span></td>'
+      + '<td>' + (u.notes_count||0) + '</td>'
+      + '<td><span style="color:' + (u.is_active?'var(--success)':'var(--danger)') + ';font-size:13px">&#9679; ' + (u.is_active?'Active':'Inactive') + '</span></td>'
+      + '<td><button class="btn btn-danger btn-sm" data-delete-user="' + u.id + '"' + disabled + '>Delete</button></td></tr>';
+  }).join('');
+  var recentRows = (an.recent_activity||[]).map(function(a) {
+    return '<tr><td>' + esc(a.patient_name) + '</td><td style="color:var(--ink-3)">' + esc(a.doctor) + '</td><td style="color:var(--ink-4)">' + fmtDate(a.created_at) + '</td></tr>';
+  }).join('');
+  var recentTable = recentRows ? '<div class="section-header" style="margin-top:28px"><div class="section-title">Recent Activity</div></div><div class="table-wrap"><table><thead><tr><th>Patient</th><th>Doctor</th><th>Date</th></tr></thead><tbody>' + recentRows + '</tbody></table></div>' : '';
+
+  return '<div class="topbar"><div class="topbar-title">Admin Panel</div>'
+    + '<div class="topbar-actions"><button class="btn btn-primary btn-sm" id="btn-add-user">' + svgPlus() + ' Add User</button></div></div>'
+    + '<div class="page">'
+    + '<div class="stats-grid">'
+    + '<div class="stat-card"><div style="font-size:28px;margin-bottom:8px">&#128101;</div><div class="stat-label">Total Users</div><div class="stat-value">' + (an.total_users||0) + '</div></div>'
+    + '<div class="stat-card"><div style="font-size:28px;margin-bottom:8px">&#128203;</div><div class="stat-label">Total Notes</div><div class="stat-value">' + (an.total_notes||0) + '</div></div>'
+    + roleStat + '</div>'
+    + '<div class="section-header"><div class="section-title">User Management</div></div>'
+    + '<div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Notes</th><th>Status</th><th>Actions</th></tr></thead><tbody>' + userRows + '</tbody></table></div>'
+    + recentTable + '</div>';
+}
+
+// ── PATIENT ─────────────────────────────────────────────────────────────
+function renderPatient() {
+  var cards = state.notes.length === 0
+    ? '<div class="empty-state"><h3>No records yet</h3><p>Your doctor will add notes after your visit</p></div>'
+    : state.notes.map(function(n) {
+        var sTag = n.subjective ? '<div><span class="soap-tag tag-s">Subjective</span><div class="soap-content-text">' + esc(n.subjective) + '</div></div>' : '';
+        var oTag = n.objective  ? '<div><span class="soap-tag tag-o">Objective</span><div class="soap-content-text">' + esc(n.objective) + '</div></div>' : '';
+        var aTag = n.assessment ? '<div><span class="soap-tag tag-a">Assessment</span><div class="soap-content-text">' + esc(n.assessment) + '</div></div>' : '';
+        var pTag = n.plan       ? '<div><span class="soap-tag tag-p">Plan</span><div class="soap-content-text">' + esc(n.plan) + '</div></div>' : '';
+        var docStr = n.doctor_name ? ' &middot; ' + esc(n.doctor_name) : '';
+        return '<div class="patient-note">'
+          + '<div class="patient-note-header"><div>'
+          + '<div style="font-weight:700;font-size:16px">&#128100; ' + esc(n.patient_name) + '</div>'
+          + '<div style="color:var(--ink-3);font-size:13px;margin-top:3px">' + fmtDate(n.created_at) + docStr + '</div>'
+          + '</div><button class="btn btn-outline btn-sm" data-download-note="' + n.id + '">Download</button></div>'
+          + '<div class="patient-note-body">' + sTag + oTag + aTag + pTag + '</div></div>';
+      }).join('');
+  return '<div class="topbar"><div class="topbar-title">My Medical Records</div></div>'
+    + '<div class="page"><div class="section-header"><div class="section-title">Your Notes</div><div class="section-sub">Read-only access to your medical documentation</div></div>'
+    + cards + '</div>';
+}
+
+// ── USER MODAL ──────────────────────────────────────────────────────────
+function renderUserModal() {
+  return '<div class="modal-overlay" id="modal-overlay">'
+    + '<div class="modal"><h2>Add New User</h2>'
+    + '<div class="form-group"><label class="label">Full Name</label><input class="input" id="new-user-name" placeholder="Dr. Jane Smith"></div>'
+    + '<div class="form-group"><label class="label">Email</label><input class="input" id="new-user-email" type="email" placeholder="jane@hospital.com"></div>'
+    + '<div class="form-group"><label class="label">Password</label><input class="input" id="new-user-password" type="password" placeholder="Temporary password"></div>'
+    + '<div class="form-group"><label class="label">Role</label><select class="input" id="new-user-role"><option value="doctor">Doctor</option><option value="nurse">Nurse</option><option value="patient">Patient</option><option value="admin">Admin</option></select></div>'
+    + '<div class="modal-footer"><button class="btn btn-ghost" id="btn-modal-cancel">Cancel</button><button class="btn btn-primary" id="btn-modal-save">Create User</button></div>'
+    + '</div></div>';
+}
+
+// ── DOWNLOAD ────────────────────────────────────────────────────────────
+function downloadNote(note) {
+  var text = 'SCRIBE AI - SOAP NOTE\n' + '='.repeat(40) + '\n'
+    + 'Patient: ' + note.patient_name + '\nDate: ' + fmtDate(note.created_at) + '\n' + '='.repeat(40) + '\n\n'
+    + 'SUBJECTIVE:\n' + (note.subjective||'') + '\n\nOBJECTIVE:\n' + (note.objective||'')
+    + '\n\nASSESSMENT:\n' + (note.assessment||'') + '\n\nPLAN:\n' + (note.plan||'') + '\n';
+  var a = document.createElement('a');
+  a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(text);
+  a.download = 'SOAP_' + note.patient_name.replace(/\s+/g,'_') + '_' + new Date().toISOString().slice(0,10) + '.txt';
+  a.click();
+  toast('Note downloaded!', 'success');
+}
+
+// ── RECORDING ───────────────────────────────────────────────────────────
+var recordInterval = null, waveInterval = null;
+
+function startRecording() {
+  state.recording = true; state.recordingTime = 0; state.transcript = '';
+  recordInterval = setInterval(function() { state.recordingTime++; var t = document.querySelector('.timer'); if(t) t.textContent = fmtTimer(state.recordingTime); }, 1000);
+  waveInterval = setInterval(function() {
+    state.waveHeights = state.waveHeights.map(function() { return Math.random()*30+4; });
+    var bars = document.querySelectorAll('.wave-bar');
+    bars.forEach(function(b,i) { if(state.waveHeights[i]) b.style.height = state.waveHeights[i]+'px'; });
+  }, 100);
+  render();
+}
+
+function stopRecording() {
+  state.recording = false;
+  clearInterval(recordInterval); clearInterval(waveInterval);
+  state.page = 'loading'; render();
+  var fd = new FormData();
+  fd.append('audio', new Blob(['mock'],{type:'audio/wav'}), 'recording.wav');
+  apiCall('POST', '/transcribe', fd, true).then(function(res) {
+    state.transcript = res.transcript || '';
+    state.page = 'record'; render();
+    toast('Transcription complete!', 'success');
+  }).catch(function(e) {
+    toast('Transcription failed: ' + e.message, 'error');
+    state.page = 'record'; render();
+  });
+}
+
+// ── EVENTS ──────────────────────────────────────────────────────────────
+function attachSplashEvents() {
+  var btn = document.getElementById('btn-get-started');
+  if (btn) btn.addEventListener('click', function() { state.page='login'; render(); });
+}
+
+function attachAuthEvents() {
+  var back = document.getElementById('btn-back-splash');
+  if (back) back.addEventListener('click', function() { state.page='splash'; render(); });
+
+  document.querySelectorAll('.auth-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() { state.authTab = tab.dataset.tab; render(); });
+  });
+  document.querySelectorAll('.demo-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var em = document.getElementById('auth-email');
+      var pw = document.getElementById('auth-password');
+      if (em) em.value = btn.dataset.demo;
+      if (pw) pw.value = 'password123';
+    });
+  });
+
+  var submit = document.getElementById('btn-auth-submit');
+  if (submit) submit.addEventListener('click', function() {
+    var email = (document.getElementById('auth-email')||{}).value||'';
+    var password = (document.getElementById('auth-password')||{}).value||'';
+    if (!email.trim() || !password.trim()) { toast('Please fill all fields', 'error'); return; }
+    if (state.authTab === 'login') {
+      apiCall('POST', '/login', {email:email.trim(), password:password.trim()}).then(function(res) {
+        state.user = res.user; state.token = res.token;
+        localStorage.setItem('scribe_auth', JSON.stringify({user:res.user,token:res.token}));
+        state.page = routeForRole(res.user.role);
+        return loadData().then(function() {
+          if (res.user.role === 'admin') return loadAdminData();
+        });
+      }).then(function() { render(); toast('Welcome back!', 'success'); })
+      .catch(function(e) { toast(e.message||'Login failed', 'error'); });
+    } else {
+      var name = (document.getElementById('auth-name')||{}).value||'';
+      var role = (document.getElementById('auth-role')||{}).value||'doctor';
+      if (!name.trim()) { toast('Please enter your name', 'error'); return; }
+      apiCall('POST', '/signup', {name:name.trim(),email:email.trim(),password:password.trim(),role:role}).then(function() {
+        state.authTab = 'login'; render(); toast('Account created! Please sign in.', 'success');
+      }).catch(function(e) { toast(e.message||'Signup failed', 'error'); });
+    }
+  });
+}
+
+function attachAppEvents() {
+  // Nav
+  document.querySelectorAll('[data-nav]').forEach(function(el) {
+    el.addEventListener('click', function() { navigate(el.dataset.nav); });
+  });
+  // Logout
+  var logout = document.getElementById('btn-logout');
+  if (logout) logout.addEventListener('click', function() {
+    state.user=null; state.token=null; state.notes=[]; state.transcript='';
+    localStorage.removeItem('scribe_auth'); state.page='splash'; render();
+    toast('Signed out', 'info');
+  });
+  // Dark mode
+  var dark = document.getElementById('btn-dark');
+  if (dark) dark.addEventListener('click', function() { state.darkMode=!state.darkMode; render(); });
+  // Search
+  var si = document.getElementById('search-input');
+  if (si) si.addEventListener('input', function(e) { state.searchQuery=e.target.value; render(); });
+  var fs = document.getElementById('filter-select');
+  if (fs) fs.addEventListener('change', function(e) { state.searchQuery=e.target.value; render(); });
+  // View note
+  document.querySelectorAll('[data-view-note]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var id = parseInt(btn.dataset.viewNote);
+      state.currentNote = state.notes.filter(function(n){return n.id===id;})[0];
+      state.page='notes'; render();
+    });
+  });
+  // Note card click
+  document.querySelectorAll('.note-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+      var id = parseInt(card.dataset.noteId);
+      state.currentNote = state.notes.filter(function(n){return n.id===id;})[0];
+      state.page='notes'; render();
+    });
+  });
+  // Delete note
+  document.querySelectorAll('[data-delete-note]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (!confirm('Delete this note?')) return;
+      var id = parseInt(btn.dataset.deleteNote);
+      apiCall('DELETE', '/notes/'+id).then(function() {
+        state.notes = state.notes.filter(function(n){return n.id!==id;});
+        render(); toast('Note deleted', 'info');
+      }).catch(function(e) { toast(e.message, 'error'); });
+    });
+  });
+  // Record button
+  var recBtn = document.getElementById('btn-record');
+  if (recBtn) recBtn.addEventListener('click', function() {
+    if (state.recording) stopRecording(); else startRecording();
+  });
+  // Re-record
+  var reRec = document.getElementById('btn-retranscribe');
+  if (reRec) reRec.addEventListener('click', function() { state.transcript=''; state.page='record'; render(); });
+  // Generate SOAP
+  var genBtn = document.getElementById('btn-generate');
+  if (genBtn) genBtn.addEventListener('click', function() {
+    var pname = (document.getElementById('patient-name-input')||{}).value||'';
+    if (!pname.trim()) { toast('Please enter the patient name', 'error'); return; }
+    if (!state.transcript) { toast('No transcript available', 'error'); return; }
+    var extra = (document.getElementById('extra-context')||{}).value||'';
+    var fullT = extra ? state.transcript + '\n\nAdditional context: ' + extra : state.transcript;
+    state.page='loading'; render();
+    apiCall('POST', '/generate-notes', {transcript:fullT}).then(function(res) {
+      var notes = res.notes || res;
+      state.currentNote = {
+        id: Date.now(), patient_name: pname.trim(),
+        subjective: notes.subjective||'', objective: notes.objective||'',
+        assessment: notes.assessment||'', plan: notes.plan||'',
+        raw_transcript: state.transcript, created_at: new Date().toISOString(),
+        doctor_name: state.user.name
+      };
+      state.transcript = ''; state.page='notes'; render();
+      toast('SOAP note generated!', 'success');
+    }).catch(function(e) { toast('Generation failed: '+e.message,'error'); state.page='record'; render(); });
+  });
+  // File upload
+  var fileInput = document.getElementById('file-input');
+  if (fileInput) fileInput.addEventListener('change', function(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    toast('Transcribing audio with Whisper...', 'info');
+    state.page='loading'; render();
+    var fd = new FormData();
+    fd.append('audio', file, file.name);
+    apiCall('POST', '/transcribe', fd, true).then(function(res) {
+      if (!res.transcript||!res.transcript.trim()) throw new Error('Whisper returned empty transcript.');
+      state.transcript = res.transcript;
+      state.page='record'; render();
+      toast('Transcribed! Now enter patient name and generate.', 'success');
+    }).catch(function(e) { toast('Transcription failed: '+e.message,'error'); state.page='record'; render(); });
+  });
+  // Save note
+  var saveNote = document.getElementById('btn-save-note');
+  if (saveNote) saveNote.addEventListener('click', function() {
+    var note = state.currentNote;
+    if (!note) return;
+    var payload = {
+      patient_name: note.patient_name,
+      subjective:  (document.getElementById('soap-s')||{}).value||note.subjective||'',
+      objective:   (document.getElementById('soap-o')||{}).value||note.objective||'',
+      assessment:  (document.getElementById('soap-a')||{}).value||note.assessment||'',
+      plan:        (document.getElementById('soap-p')||{}).value||note.plan||'',
+      raw_transcript: note.raw_transcript||''
+    };
+    apiCall('POST', '/save-note', payload).then(function() {
+      return loadData();
+    }).then(function() { render(); toast('Note saved!', 'success'); })
+    .catch(function(e) { toast(e.message, 'error'); });
+  });
+  // Download note
+  var dlNote = document.getElementById('btn-download-note');
+  if (dlNote) dlNote.addEventListener('click', function() { if (state.currentNote) downloadNote(state.currentNote); });
+  // Patient download buttons
+  document.querySelectorAll('[data-download-note]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var id = parseInt(btn.dataset.downloadNote);
+      var note = state.notes.filter(function(n){return n.id===id;})[0];
+      if (note) downloadNote(note);
+    });
+  });
+  // Copy note
+  var copyNote = document.getElementById('btn-copy-note');
+  if (copyNote) copyNote.addEventListener('click', function() {
+    var n = state.currentNote; if (!n) return;
+    var text = 'Patient: '+n.patient_name+'\n\nS: '+n.subjective+'\n\nO: '+n.objective+'\n\nA: '+n.assessment+'\n\nP: '+n.plan;
+    navigator.clipboard.writeText(text).then(function() { toast('Copied!', 'success'); });
+  });
+  // Admin: add user
+  var addUser = document.getElementById('btn-add-user');
+  if (addUser) addUser.addEventListener('click', function() {
+    state.showUserModal=true; render();
+    var overlay = document.getElementById('modal-overlay');
+    if (overlay) overlay.addEventListener('click', function(e) { if(e.target.id==='modal-overlay'){state.showUserModal=false;render();} });
+    var cancel = document.getElementById('btn-modal-cancel');
+    if (cancel) cancel.addEventListener('click', function() { state.showUserModal=false; render(); });
+    var save = document.getElementById('btn-modal-save');
+    if (save) save.addEventListener('click', function() {
+      var n = (document.getElementById('new-user-name')||{}).value||'';
+      var em = (document.getElementById('new-user-email')||{}).value||'';
+      var pw = (document.getElementById('new-user-password')||{}).value||'';
+      var r  = (document.getElementById('new-user-role')||{}).value||'doctor';
+      if (!n.trim()||!em.trim()||!pw.trim()) { toast('Please fill all fields','error'); return; }
+      apiCall('POST','/users',{name:n.trim(),email:em.trim(),password:pw.trim(),role:r}).then(function() {
+        return apiCall('GET','/users');
+      }).then(function(users) { state.users=users; state.showUserModal=false; render(); toast('User created!','success'); })
+      .catch(function(e) { toast(e.message,'error'); });
+    });
+  });
+  // Delete user
+  document.querySelectorAll('[data-delete-user]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var id = parseInt(btn.dataset.deleteUser);
+      if (!confirm('Delete this user?')) return;
+      apiCall('DELETE','/users/'+id).then(function() { return apiCall('GET','/users'); })
+      .then(function(users) { state.users=users; render(); toast('User deleted','info'); })
+      .catch(function(e) { toast(e.message,'error'); });
+    });
+  });
+}
+
+// ── DATA LOADING ────────────────────────────────────────────────────────
+function loadData() {
+  return apiCall('GET','/notes').then(function(n){state.notes=n;}).catch(function(){state.notes=[];});
+}
+function loadAdminData() {
+  return Promise.all([
+    apiCall('GET','/users').then(function(u){state.users=u;}).catch(function(){state.users=[];}),
+    apiCall('GET','/analytics').then(function(a){state.analytics=a;}).catch(function(){state.analytics=null;})
+  ]);
+}
+function navigate(page) {
+  state.page=page;
+  var p = page==='dashboard'||page==='history'||page==='patient' ? loadData() : Promise.resolve();
+  var a = page==='admin' ? loadAdminData() : Promise.resolve();
+  Promise.all([p,a]).then(function(){render();});
+}
+
+// ── INIT ────────────────────────────────────────────────────────────────
+(function() {
+  var init = state.user ? loadData() : Promise.resolve();
+  var admin = (state.user && state.user.role==='admin') ? loadAdminData() : Promise.resolve();
+  Promise.all([init, admin]).then(function() { render(); });
+})();
+</script>
+</body>
+</html>
