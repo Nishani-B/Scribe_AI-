@@ -1,0 +1,155 @@
+# ─── Scribe AI — Azure Pipelines CI/CD ───────────────────────────────────────
+# Triggers on every push to main branch
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+
+pr:
+  branches:
+    include:
+      - main
+
+variables:
+  pythonVersion: '3.11'
+  nodeVersion: '18.x'
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STAGE 1 — BUILD & TEST
+# ═══════════════════════════════════════════════════════════════════════════════
+stages:
+- stage: Build
+  displayName: 'Build and Test'
+  jobs:
+
+  # ── Backend (FastAPI) ───────────────────────────────────────────────────────
+  - job: BackendBuild
+    displayName: 'Backend — FastAPI'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(pythonVersion)'
+      displayName: 'Set Python $(pythonVersion)'
+
+    - script: |
+        cd backend
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest httpx
+      displayName: 'Install dependencies'
+
+    - script: |
+        cd backend
+        python -m py_compile main.py
+        echo "Syntax check passed"
+      displayName: 'Syntax check'
+
+    - script: |
+        cd backend
+        # Start server in background and health-check it
+        uvicorn main:app --host 0.0.0.0 --port 8000 &
+        SERVER_PID=$!
+        sleep 5
+        curl -f http://localhost:8000/docs || exit 1
+        echo "Server started OK"
+        kill $SERVER_PID
+      displayName: 'Startup smoke test'
+      env:
+        GEMINI_API_KEY: $(GEMINI_API_KEY)   # set this in Azure Pipeline Variables
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: 'backend'
+        ArtifactName: 'backend'
+      displayName: 'Publish backend artifact'
+
+  # ── Frontend (HTML) ─────────────────────────────────────────────────────────
+  - job: FrontendBuild
+    displayName: 'Frontend — HTML'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+
+    - script: |
+        # Validate the HTML file exists and is non-empty
+        if [ ! -f "scribe-ai.html" ]; then
+          echo "ERROR: scribe-ai.html not found"
+          exit 1
+        fi
+        SIZE=$(wc -c < scribe-ai.html)
+        echo "Frontend file size: $SIZE bytes"
+        if [ "$SIZE" -lt 1000 ]; then
+          echo "ERROR: File too small, likely corrupted"
+          exit 1
+        fi
+        echo "Frontend check passed"
+      displayName: 'Validate frontend file'
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: 'scribe-ai.html'
+        ArtifactName: 'frontend'
+      displayName: 'Publish frontend artifact'
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STAGE 2 — DEPLOY TO AZURE
+# ═══════════════════════════════════════════════════════════════════════════════
+- stage: Deploy
+  displayName: 'Deploy to Azure'
+  dependsOn: Build
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+
+  # ── Deploy Backend to Azure Web App ────────────────────────────────────────
+  - job: DeployBackend
+    displayName: 'Deploy Backend — Azure Web App'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+
+    - task: DownloadBuildArtifacts@1
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'backend'
+        downloadPath: '$(System.ArtifactsDirectory)'
+      displayName: 'Download backend artifact'
+
+    - task: AzureWebApp@1
+      inputs:
+        azureSubscription: '$(AZURE_SUBSCRIPTION)'      # set in Pipeline → Service connections
+        appType: 'webAppLinux'
+        appName: '$(BACKEND_APP_NAME)'                  # e.g. scribe-ai-backend
+        package: '$(System.ArtifactsDirectory)/backend'
+        runtimeStack: 'PYTHON|3.11'
+        startUpCommand: 'pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8000'
+      displayName: 'Deploy backend to Azure Web App'
+      env:
+        GEMINI_API_KEY: $(GEMINI_API_KEY)
+
+  # ── Deploy Frontend to Azure Static Web App ────────────────────────────────
+  - job: DeployFrontend
+    displayName: 'Deploy Frontend — Azure Static Web Apps'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+
+    - task: DownloadBuildArtifacts@1
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'frontend'
+        downloadPath: '$(System.ArtifactsDirectory)'
+      displayName: 'Download frontend artifact'
+
+    - task: AzureStaticWebApp@0
+      inputs:
+        azure_static_web_apps_api_token: $(AZURE_STATIC_WEB_APPS_API_TOKEN)  # from Azure portal
+        app_location: '$(System.ArtifactsDirectory)/frontend'
+        output_location: ''
+        skip_app_build: true
+      displayName: 'Deploy frontend to Azure Static Web Apps'
